@@ -5,6 +5,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+// My Imports 
+import com.mygdx.game.levels.Level;
+import com.mygdx.game.levels.TestLevel;
 // Scene2D Imports
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -27,6 +30,7 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.utils.Array;
 // GDX Native Imports 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
@@ -60,6 +64,12 @@ public class Main extends ApplicationAdapter {
 //    private btDispatcher bulletDispatcher; // Iterates over pairs looking for collisions. // trash 
     // Input Handling 
     private GameInputProcessor inputProcessor; 
+    // Cutscene Management
+    private CutscenesHolder cutscenesHolder;
+    // Audio Management
+    private AudioManager audioManager;
+    // Level Management
+    private Level debugLevel;
     
 
     @Override
@@ -70,11 +80,10 @@ public class Main extends ApplicationAdapter {
         uiManager.initStaminaBar("stamina", new Vector2(Gdx.graphics.getWidth() * 0.955f, Gdx.graphics.getHeight() * 0.5f), 1f, 100f, 0f, 100f, new Image(new Texture(Gdx.files.internal("staminaBar.png"))));
         // Scene Information
         mundus = new Mundus(Gdx.files.internal("RRRProject"));
-        scene = mundus.loadScene("TestingSite.mundus");
-//        scene.initPBR();
+        scene = mundus.loadScene("areaOne.mundus");
         
-        // Terrain Debugging
-        terrainObject = scene.sceneGraph.findByName("Terrain");
+        // Terrain Info
+        terrainObject = scene.sceneGraph.findByName("terrainAreaOne");
         terrainComponent = (TerrainComponent) terrainObject.findComponentByType(Component.Type.TERRAIN);  
         
         // Player Information
@@ -91,32 +100,26 @@ public class Main extends ApplicationAdapter {
         inputProcessor = new GameInputProcessor(camera, player, physicsSystem);
         Gdx.input.setInputProcessor(inputProcessor);
         Gdx.input.setCursorCatched(true);
-
         // Animation Handling  
         animController = new AnimationController(player.getModelInstance());
         player.initAnimationController(animController);
-        // UI handling
-        VisUI.load();
-        //
+        // Cutscene Management
+        cutscenesHolder = new CutscenesHolder(player);
+        // Audio Manager
+        audioManager = new AudioManager(player);
+        // Set camera for scene
         scene.cam = camera.getCamera();        
-        /**
-         * PHYSICS DEBUGGING BELOW:// 
-         */
-//        float mass = 2f;
-//        btBoxShape box = new btBoxShape(new Vector3(0.35f, 1.25f, 0.23f));
-//        Vector3 inertia = new Vector3();
-//        box.calculateLocalInertia(mass, inertia); 
         
-        
+        // Now add our Physics Body
         terrainBody = physicsSystem.addTerrain(terrainObject, terrainComponent);
-        
-//        btRigidBody.btRigidBodyConstructionInfo info = new btRigidBody.btRigidBodyConstructionInfo(mass, null, box, inertia);
-//        playerRigidBody = new btRigidBody(info);
-//        GameMotionState motionState = new GameMotionState(player.getGameObject(), 1.25f);
-//        playerRigidBody.setMotionState(motionState);
         physicsSystem.addBody(player.initPlayerEntity());
-//        physicsSystem.addBody(player.initPlayerEntityFeet());
         
+        // CUTSCENE TESTING
+        camera.playCutscene(cutscenesHolder.getCutsceneByName("testing"));
+        camera.getCamera().far = 240f;
+        
+        // Level Testing
+        debugLevel = new TestLevel();
         
         
         
@@ -141,11 +144,17 @@ public class Main extends ApplicationAdapter {
         camera.updateCamera(dt);
         scene.sceneGraph.update();
         scene.render();
-        this.physicsSystem.render(camera, player);
+        physicsSystem.render(camera, player); // Rendering Debug Lines
         uiManager.render();
-        // Debug
-//        System.out.println("TERRAIN HEIGHT AT PLAYER: "+terrainComponent.getHeightAtWorldCoord(player.getPlayerModelX(), player.getPlayerModelZ()));
-//        System.out.println("PLAYER'S HEIGHT: " + player.getPlayerModelY());
+        audioManager.play();
+        
+        // Debugger
+        if (Gdx.input.isKeyPressed(Keys.X)) {
+            Object[] returnedItems = debugLevel.load(mundus, player, physicsSystem, camera);
+            // [scene, animationController]
+            scene = (Scene) returnedItems[0];
+            animController = (AnimationController) returnedItems[1];
+        }
 
 
 
@@ -155,5 +164,8 @@ public class Main extends ApplicationAdapter {
     public void dispose () {
         mundus.dispose();
         scene.dispose();
+        physicsSystem.dispose();
+        stage.dispose();
+        
     }
 }

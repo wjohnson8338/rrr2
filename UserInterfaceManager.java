@@ -106,4 +106,8 @@ public class UserInterfaceManager {
         this.staminaBar.updateRenderedBar();
         this.stage.draw();
     }
+    
+    public void dispose() {
+        this.stage.dispose();
+    }
 }

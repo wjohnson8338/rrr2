@@ -126,8 +126,6 @@ public class ValueBar {
         /**
          * Percentage of value filled to max 
          */
-        System.out.println(this.value + " v ");
-        System.out.println(maxValue);
         return (this.value / this.maxValue);
         
     }

@@ -67,7 +67,7 @@ public class PhysicsSystem implements Disposable {
     public static boolean isFlipQuadEdges = false;
     
     // Core Bullet Fields
-    private final btDynamicsWorld dynamicsWorld; // Stores btCollision Objects
+    private btDynamicsWorld dynamicsWorld; // Stores btCollision Objects
     private final btCollisionConfiguration collisionConfig; // Bullet Configuration such as Stack Allocator Size, Default Collision Algorithms, Persistent Manifold Pool Size
     private final btDispatcher dispatcher; // Dispatcher iterates over pairs of objects, searching for collisions
     private final btBroadphaseInterface broadphase; // Acceleration structure to quickly reject pairs of objects, based on axis aligned bounding box (AABB)
@@ -183,6 +183,15 @@ public class PhysicsSystem implements Disposable {
         this.debugGroundEndRay.set(endPosition);
     }
     
+    public void clear() {
+        /** Clears all Physics Bodies in the simulation
+         *  Will basically recreate our physics simulation
+         */
+        
+        // Broadphase that adapts to dimensions of world.
+        this.dynamicsWorld = new btDiscreteDynamicsWorld(this.dispatcher, this.broadphase, this.constraintSolver, this.collisionConfig);
+        this.dynamicsWorld.setGravity(new Vector3(0, -60f, 0)); // -22f is original
+    }
     public void setDebugDrawer(DebugDrawer drawer) { this.dynamicsWorld.setDebugDrawer(drawer); } 
     
     public void enableDebug() { this.isDebugMode = true; }

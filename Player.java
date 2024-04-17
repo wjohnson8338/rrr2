@@ -81,6 +81,7 @@ public class Player {
     private float playerAngleFacingSensitivity = 750f; // Speed of Player Rotation Angle Change 
     private GameCamera camera; 
     // Movement Physics Fields
+    private boolean isReadyForMovementAudio = false;
     private boolean isMoving = false;
     private boolean isSprinting = false;
     private boolean isStaminaDepleted = false;
@@ -95,7 +96,7 @@ public class Player {
     private ValueBar staminaValueBar;
     private ValueBar healthValueBar;
     // Core Game Field Factors 
-    public static float STAMINA_LOSS_FACTOR = 30f;
+    public static float STAMINA_LOSS_FACTOR = 15f;
     public static float STAMINA_GAIN_FACTOR = 50f;
     public static float STAMINA_REGAIN_DURATION = 3f; // After this amount of time, stamina will go back up. 
     private float staminaDuration = 0f;
@@ -350,6 +351,9 @@ public class Player {
          * 3. Using absolute values, whichever angle is the smallest, will be our shortest distance angle
          * 4. If the angle is negative, tell our next method to move LEFT
          * 5. Finally, set our prospected angle value and call this.alignPlayerModelRotation which begins rotating
+         * 
+         * @param angleChange with the NEW reference angles, turn this amount of degrees
+         * 
          */
         if (this.playerAngleFacingProspect > 180f && this.playerAngleFacingProspect < 182f) {
             this.playerAngleFacingCurrent = this.playerAngleFacingProspect;
@@ -359,7 +363,7 @@ public class Player {
         }
         // Angle to test
         float prospectedAngle = this.camera.getAngleAroundPlayer() -180f  + angleChange;
-//        System.out.println(prospectedAngle);
+        
         // These two if statements ensure the prospected angle aligns with our angle system 0 -> 180> -180 -> 0
         if (prospectedAngle <= -180f) { // Passed top right 
             prospectedAngle += 360f;
@@ -368,19 +372,20 @@ public class Player {
             prospectedAngle -= 360f;
         }
         
-//        System.out.println(prospectedAngle);
         
-        // I'll be honest, this probably isn't the most efficient way, but it works so I don't wanna touch it anymore 
+        // TODO, Remake this Formula. These find three distances, not the correct way and most likely not efficient
         float a0 = prospectedAngle - this.playerAngleFacingCurrent; // normal unchanged angle
         float a1 = a0 + 360; // angle + 360
         float a2 = a0 - 360; // angle - 360 
         
+        // Distances but with absolute values for comparison
         float tmpA0 = Math.abs(a0);
         float tmpA1 = Math.abs(a1);
         float tmpA2 = Math.abs(a2);
         
         float closestAngle = prospectedAngle; // Eventually, this will be our closest angle 
         
+        // Pick Closest Angle 
         if (tmpA0 > tmpA1 && tmpA0 > tmpA2) {
             closestAngle = a0;
         }
@@ -391,7 +396,7 @@ public class Player {
             closestAngle = a2; 
         }
         
-        
+        // Get Direction to Turn in 
         if (closestAngle < 0f) {
             this.playerAngleDirection = Player.ANGLE_LEFT; // It's negative so move left 
         }
@@ -453,16 +458,17 @@ public class Player {
         
         // Vector3.sub means subtraction, same with .add .mul, etc 
         
-        // Start the array at the player's position (MODEL POSITION NOT PHYSICS BODY POSITION)
-        // Then we are going to shoot the array towards this temporary position below 
+        // Start the ray at the player's position (MODEL POSITION NOT PHYSICS BODY POSITION)
+        // Then we are going to shoot the ray towards this temporary position below 
         tmpPosition.set(this.getPlayerVector()).sub(0f, 0.3f, 0f);
         
         
         this.physicsSystemReference.raycast(this.getPlayerVector().add(0, 0.5f, 0), tmpPosition, raycastCallback);
-        
+        // Immediately set our hasHit() to isGrounded
         this.isGrounded = raycastCallback.hasHit();
+        // We can also enable double jump since it was hit 
         if (this.raycastCallback.hasHit()) {
-            this.doubleJumpReady = true; 
+            this.doubleJumpReady = true;  // TODO, possibly remove this if statement in the future, I'm sure there's a more efficient way of doing this
         }
     }
     
@@ -480,6 +486,7 @@ public class Player {
         
         // If the player is not on the ground 
         if (!this.isGrounded && this.doubleJumpReady) {
+            this.playerRigidBody.setLinearVelocity(new Vector3(this.playerRigidBody.getLinearVelocity().x, 0f, this.playerRigidBody.getLinearVelocity().z));
             this.playerRigidBody.applyCentralForce(new Vector3(0f, this.doubleJumpForce, 0f));
             this.doubleJumpReady = false;
         }
@@ -509,6 +516,7 @@ public class Player {
         if (this.isMoving) {
             // This frame we will not change the velocity, so change to false to prepare for next frame 
             this.isMoving = false;
+            this.isReadyForMovementAudio = true;
             if (this.isSprinting) {
                 this.camera.enableSprintFOV();
             }
@@ -516,8 +524,8 @@ public class Player {
         else {
             // If the player isn't moving, immediately cancel our X and Z velocity, Y stays the same for gravity.
             this.playerRigidBody.setLinearVelocity(new Vector3(0f, this.playerRigidBody.getLinearVelocity().y, 0f));
+            this.isReadyForMovementAudio = false;
         }
-        System.out.println(staminaValueBar.getValue() + "value");
     }
     
     // Getters for Player Position
@@ -531,6 +539,10 @@ public class Player {
     }
     
     public boolean isStaminaDepleted() { return this.isStaminaDepleted; }
+    
+    public boolean isMoving() { return this.isReadyForMovementAudio; }
+    
+    public boolean isSprinting() { return (this.isSprinting && !this.isStaminaDepleted()); }
     
     public float getPlayerAngleFacingProspect() { return this.playerAngleFacingProspect; }
     public float getPlayerAngleFacingCurrent() { return this.playerAngleFacingCurrent; }

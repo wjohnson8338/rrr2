@@ -43,9 +43,9 @@ public class GameCamera {
     private float angleAroundPlayer;
     private float distanceFromPlayer;
     private float pitch;
-    private boolean invert; 
-    
+    private boolean isPlayingCutscene = false;
     private boolean isSprintPOV;
+    private CutsceneData activeCutscene;
     
     public GameCamera(PerspectiveCamera camera, Player playerReference) {
         this.playerReference = playerReference;
@@ -55,6 +55,8 @@ public class GameCamera {
         this.pitch = GameCamera.CAM_START_PITCH;
         this.isSprintPOV = false;
         camera.far = 500f;
+        // Camera Debug 
+        isPlayingCutscene = false;
     }
     
     public void updateCamera(float deltaTime) {  
@@ -64,43 +66,68 @@ public class GameCamera {
          */
         //         
         
-        // Get both distances from camera to player in X and Y
-        float distance_x = (float) (this.distanceFromPlayer * Math.sin(Math.toRadians(this.pitch)));
-        float distance_y = (float) (this.distanceFromPlayer * Math.cos(Math.toRadians(this.pitch)));
-        
-        // Get our offsets
-        float offsetX = (float) (distance_x * Math.sin(Math.toRadians(this.angleAroundPlayer)));
-        float offsetZ = (float) (distance_x * Math.cos(Math.toRadians(this.angleAroundPlayer)));
-        
-//        this.camera.position.x = playerReference.getPlayerModelX() - offsetX;
-//        this.camera.position.y = playerReference.getPlayerModelY() + distance_y;
-//        this.camera.position.z = playerReference.getPlayerModelZ() - offsetZ;
-        
-        this.camera.position.x = playerReference.getPlayerBodyX() - offsetX;
-        this.camera.position.y = playerReference.getPlayerBodyY() + distance_y;
-        this.camera.position.z = playerReference.getPlayerBodyZ() - offsetZ;
-        //
-        this.camera.up.set(Vector3.Y);
-        this.camera.lookAt(playerReference.getPlayerBodyX(), playerReference.getPlayerBodyY()+0.5f, playerReference.getPlayerBodyZ());
-//        this.camera.lookAt(playerReference.getPlayerModelX(), playerReference.getPlayerModelY()+1.5f, playerReference.getPlayerModelZ());
+        if (!this.isPlayingCutscene) {
+            // Get both distances from camera to player in X and Y
+            float distance_x = (float) (this.distanceFromPlayer * Math.sin(Math.toRadians(this.pitch)));
+            float distance_y = (float) (this.distanceFromPlayer * Math.cos(Math.toRadians(this.pitch)));
 
-        if (this.isSprintPOV && !this.playerReference.isStaminaDepleted()) {
-            this.camera.fieldOfView += GameCamera.CAM_FOV_SPEED * deltaTime;
+            // Get our offsets
+            float offsetX = (float) (distance_x * Math.sin(Math.toRadians(this.angleAroundPlayer)));
+            float offsetZ = (float) (distance_x * Math.cos(Math.toRadians(this.angleAroundPlayer)));
+
+    //        this.camera.position.x = playerReference.getPlayerModelX() - offsetX;
+    //        this.camera.position.y = playerReference.getPlayerModelY() + distance_y;
+    //        this.camera.position.z = playerReference.getPlayerModelZ() - offsetZ;
+            System.out.println(playerReference.getPlayerBodyX());
+            System.out.println(playerReference.getPlayerBodyY());
+            System.out.println(playerReference.getPlayerBodyZ());
+
+            this.camera.position.x = playerReference.getPlayerBodyX() - offsetX;
+            this.camera.position.y = playerReference.getPlayerBodyY() + distance_y;
+            this.camera.position.z = playerReference.getPlayerBodyZ() - offsetZ;
+            //
+            this.camera.up.set(Vector3.Y);
+            this.camera.lookAt(playerReference.getPlayerBodyX(), playerReference.getPlayerBodyY()+0.5f, playerReference.getPlayerBodyZ());
+    //        this.camera.lookAt(playerReference.getPlayerModelX(), playerReference.getPlayerModelY()+1.5f, playerReference.getPlayerModelZ());
+
+            if (this.isSprintPOV && !this.playerReference.isStaminaDepleted()) {
+                this.camera.fieldOfView += GameCamera.CAM_FOV_SPEED * deltaTime;
+            }
+            else {
+                this.camera.fieldOfView -= GameCamera.CAM_FOV_SPEED * deltaTime;
+            }
+
+            if (this.camera.fieldOfView > GameCamera.CAM_SPRINT_FOV) {
+                this.camera.fieldOfView = GameCamera.CAM_SPRINT_FOV;
+            }
+            else if (this.camera.fieldOfView < GameCamera.CAM_NORM_FOV) {
+                this.camera.fieldOfView = GameCamera.CAM_NORM_FOV;
+            }
+            this.camera.update();
+        }
+        else if (this.isPlayingCutscene) { // We do this check again for flexibility, just in case I wanna add more camera options
+            this.updateCutscene(deltaTime);
+        }
+    }
+        
+    public void playCutscene(CutsceneData cutscene) {
+        /**
+         * Plays desired cutscene 
+         */
+        this.activeCutscene = cutscene;
+        this.isPlayingCutscene = true;
+        cutscene.startCutscene(this);
+    }
+
+    public void updateCutscene(float deltaTime) {
+        if (this.activeCutscene.isCutsceneFinished()) {
+            this.activeCutscene = null;
+            this.isPlayingCutscene = false;
         }
         else {
-            this.camera.fieldOfView -= GameCamera.CAM_FOV_SPEED * deltaTime;
+            this.activeCutscene.stepCutscene(this, deltaTime);
         }
-        
-        if (this.camera.fieldOfView > GameCamera.CAM_SPRINT_FOV) {
-            this.camera.fieldOfView = GameCamera.CAM_SPRINT_FOV;
-        }
-        else if (this.camera.fieldOfView < GameCamera.CAM_NORM_FOV) {
-            this.camera.fieldOfView = GameCamera.CAM_NORM_FOV;
-        }
-        this.camera.update();
     }
-    
-    
     // PlayerModel x Camera 
      
     public void reduceAngleAroundPlayer(float amount) { 
@@ -162,6 +189,19 @@ public class GameCamera {
             this.distanceFromPlayer = GameCamera.CAM_MAX_DISTANCE_FROM_PLAYER;
         }
     }
+    
+    
+    public Vector3 getPosition() {
+        return this.camera.position;
+    }
+    public void setPosition(Vector3 pos) {
+        this.camera.position.set(pos);
+    }
+    
+    public void lookAt(Vector3 lookAtVec) {
+        this.camera.lookAt(lookAtVec);
+    }
+    
     public void enableSprintFOV() {
         this.isSprintPOV = true;
     }
@@ -188,6 +228,14 @@ public class GameCamera {
     public float getPositionY() {return this.camera.position.y; }
     
     public float getPositionZ() { return this.camera.position.z; } 
+    
+    public void addPositionX(float value) { this.camera.position.x += value; }
+    
+    public void addPositionY(float value) { this.camera.position.y += value; }
+    
+    public void addPositionZ(float value) { this.camera.position.z += value; }
+    
+    
     
     public PerspectiveCamera getCamera() { 
         return this.camera;
