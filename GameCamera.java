@@ -78,9 +78,6 @@ public class GameCamera {
     //        this.camera.position.x = playerReference.getPlayerModelX() - offsetX;
     //        this.camera.position.y = playerReference.getPlayerModelY() + distance_y;
     //        this.camera.position.z = playerReference.getPlayerModelZ() - offsetZ;
-            System.out.println(playerReference.getPlayerBodyX());
-            System.out.println(playerReference.getPlayerBodyY());
-            System.out.println(playerReference.getPlayerBodyZ());
 
             this.camera.position.x = playerReference.getPlayerBodyX() - offsetX;
             this.camera.position.y = playerReference.getPlayerBodyY() + distance_y;

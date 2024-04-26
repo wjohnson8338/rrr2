@@ -97,7 +97,6 @@ public class GameInputProcessor implements InputProcessor {
             else {
                 physicsSystem.enableDebug();
             }
-            System.out.println(physicsSystem.isDebugModeCheck());
         }
     }
     

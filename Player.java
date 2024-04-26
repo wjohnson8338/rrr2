@@ -207,7 +207,7 @@ public class Player {
            
     // Methods regarding model position 
     public void updatePlayerModelPosition() {
-        this.playerModelPosition = this.getPlayerVector();
+        this.playerModelPosition = this.getPlayerModelPosVector();
     }
     
     public void updatePlayerBodyPosition() {
@@ -460,10 +460,10 @@ public class Player {
         
         // Start the ray at the player's position (MODEL POSITION NOT PHYSICS BODY POSITION)
         // Then we are going to shoot the ray towards this temporary position below 
-        tmpPosition.set(this.getPlayerVector()).sub(0f, 0.3f, 0f);
+        tmpPosition.set(this.getPlayerModelPosVector()).sub(0f, 0.3f, 0f);
         
         
-        this.physicsSystemReference.raycast(this.getPlayerVector().add(0, 0.5f, 0), tmpPosition, raycastCallback);
+        this.physicsSystemReference.raycast(this.getPlayerModelPosVector().add(0, 0.5f, 0), tmpPosition, raycastCallback);
         // Immediately set our hasHit() to isGrounded
         this.isGrounded = raycastCallback.hasHit();
         // We can also enable double jump since it was hit 
@@ -529,14 +529,9 @@ public class Player {
     }
     
     // Getters for Player Position
-    public Vector3 getPlayerVector() { 
-        /**
-         * Gets the player's position in the form of a Vector3
-         * 
-         * @return Vector3 the player position
-         */
-        return this.playerModel.getPosition(Vector3.X); 
-    }
+    public Vector3 getPlayerModelPosVector() { return this.playerModel.getPosition(Vector3.X); }
+  
+    public Vector3 getPlayerBodyVector() { return this.playerBodyPosition; }
     
     public boolean isStaminaDepleted() { return this.isStaminaDepleted; }
     

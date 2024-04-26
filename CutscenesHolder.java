@@ -20,8 +20,8 @@ public class CutscenesHolder {
         // Create our test cutscene 
         
         Array<CutscenePoint> tutorialPoints = new Array<CutscenePoint>();
-        tutorialPoints.add(new CutscenePoint(new Vector3(183f, 17f, 186f), player.getPlayerVector())); 
-        tutorialPoints.add(new CutscenePoint(new Vector3(281f, 50f, 180f), player.getPlayerVector()));
+        tutorialPoints.add(new CutscenePoint(new Vector3(183f, 17f, 186f), player.getPlayerModelPosVector())); 
+        tutorialPoints.add(new CutscenePoint(new Vector3(281f, 50f, 180f), player.getPlayerModelPosVector()));
         tutorialPoints.add(new CutscenePoint(new Vector3(106f, 15f, 116f)));
         
         this.cutscenes.add(new CutsceneData("test", tutorialPoints, 10f));

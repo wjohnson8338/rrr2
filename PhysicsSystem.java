@@ -28,6 +28,7 @@ import com.badlogic.gdx.physics.bullet.dynamics.*;
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 import com.badlogic.gdx.physics.bullet.collision.RayResultCallback;
 import com.mbrlabs.mundus.commons.terrain.Terrain;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObjectArray;
 // GLTF Imports
 // GDX Native 3D Imports
 import com.badlogic.gdx.graphics.g3d.utils.*;
@@ -68,10 +69,10 @@ public class PhysicsSystem implements Disposable {
     
     // Core Bullet Fields
     private btDynamicsWorld dynamicsWorld; // Stores btCollision Objects
-    private final btCollisionConfiguration collisionConfig; // Bullet Configuration such as Stack Allocator Size, Default Collision Algorithms, Persistent Manifold Pool Size
-    private final btDispatcher dispatcher; // Dispatcher iterates over pairs of objects, searching for collisions
-    private final btBroadphaseInterface broadphase; // Acceleration structure to quickly reject pairs of objects, based on axis aligned bounding box (AABB)
-    private final btConstraintSolver constraintSolver; 
+    private btCollisionConfiguration collisionConfig; // Bullet Configuration such as Stack Allocator Size, Default Collision Algorithms, Persistent Manifold Pool Size
+    private btDispatcher dispatcher; // Dispatcher iterates over pairs of objects, searching for collisions
+    private btBroadphaseInterface broadphase; // Acceleration structure to quickly reject pairs of objects, based on axis aligned bounding box (AABB)
+    private btConstraintSolver constraintSolver; 
     
     // Debug Fields
     private Vector3 debugGroundStartRay = new Vector3();
@@ -119,19 +120,20 @@ public class PhysicsSystem implements Disposable {
             
 //            debugDrawer.drawLine(player.getPlayerVector(), new Vector3(camera.getPositionX(), 2f, camera.getPositionZ()), new Vector3(1f, 0f, 1f));
             
-            debugDrawer.draw3dText(player.getPlayerVector(), "CAM ANGLE: " + String.valueOf(camera.getAngleAroundPlayer()));
-            debugDrawer.draw3dText(player.getPlayerVector().sub(0f, 0.4f, 0f), "CAM_POS_VEC: X- " + (int) camera.getPositionX() + " | Y- " + (int) camera.getPositionY() + " | Z- " + (int) camera.getPositionZ());
-            debugDrawer.draw3dText(player.getPlayerVector().sub(0f, 0.8f, 0f), "CAM_DIR_VEC: X- " + camera.getDirection().x + " | Y- " + camera.getDirection().y + " | Z- " + camera.getDirection().z);
+            debugDrawer.draw3dText(player.getPlayerModelPosVector(), "CAM ANGLE: " + String.valueOf(camera.getAngleAroundPlayer()));
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().sub(0f, 0.4f, 0f), "CAM_POS_VEC: X- " + (int) camera.getPositionX() + " | Y- " + (int) camera.getPositionY() + " | Z- " + (int) camera.getPositionZ());
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().sub(0f, 0.8f, 0f), "CAM_DIR_VEC: X- " + camera.getDirection().x + " | Y- " + camera.getDirection().y + " | Z- " + camera.getDirection().z);
 
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 2.4f, 0f), "MODEL_X: " + (int)player.getPlayerModelX());
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 2.2f, 0f), "MODEL_Y: " + (int)player.getPlayerModelY());
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 2.0f, 0f), "MODEL_Z: " + (int)player.getPlayerModelZ());
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 3.0f, 0f), "LIN_VELOCITY_VEC: X- " + (int) player.getLinVelocity().x + " | Y- " + (int) player.getLinVelocity().y + " | Z- " + (int) player.getLinVelocity().z);
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 3.0f, 0f), "LIN_VELOCITY_VEC: X- " + (int) player.getLinVelocity().x + " | Y- " + (int) player.getLinVelocity().y + " | Z- " + (int) player.getLinVelocity().z);
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 2.4f, 0f), "MODEL_X: " + (int)player.getPlayerModelX());
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 2.2f, 0f), "MODEL_Y: " + (int)player.getPlayerModelY());
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 2.0f, 0f), "MODEL_Z: " + (int)player.getPlayerModelZ());
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 3.0f, 0f), "LIN_VELOCITY_VEC: X- " + (int) player.getLinVelocity().x + " | Y- " + (int) player.getLinVelocity().y + " | Z- " + (int) player.getLinVelocity().z);
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 3.0f, 0f), "LIN_VELOCITY_VEC: X- " + (int) player.getLinVelocity().x + " | Y- " + (int) player.getLinVelocity().y + " | Z- " + (int) player.getLinVelocity().z);
             
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 3.5f, 0f), "ANGLE_PROSPECT: X- " + player.getPlayerAngleFacingProspect());
-            debugDrawer.draw3dText(player.getPlayerVector().add(0f, 3.7f, 0f), "ANGLE_CURRENT: X- " + player.getPlayerAngleFacingCurrent());
-
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 3.5f, 0f), "ANGLE_PROSPECT: X- " + player.getPlayerAngleFacingProspect());
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 3.7f, 0f), "ANGLE_CURRENT: X- " + player.getPlayerAngleFacingCurrent());
+            
+            debugDrawer.draw3dText(player.getPlayerModelPosVector().add(0f, 4.5f, 0f), "PLAYER_POS_VEC: X- " + (int) player.getPlayerBodyX() + " | Y- " + (int) player.getPlayerBodyY() + " | Z- " + (int) player.getPlayerBodyZ());
 //            debugDrawer.draw3dText(player.getPlayerVector().add(2f, 2.2f, 0f), "J READY: " + player.isGroundedCheck());
 
             this.debugDrawer.end();
@@ -189,8 +191,13 @@ public class PhysicsSystem implements Disposable {
          */
         
         // Broadphase that adapts to dimensions of world.
+        this.collisionConfig = new btDefaultCollisionConfiguration();
+        this.broadphase = new btDbvtBroadphase();
         this.dynamicsWorld = new btDiscreteDynamicsWorld(this.dispatcher, this.broadphase, this.constraintSolver, this.collisionConfig);
+        this.dynamicsWorld.setDebugDrawer(this.debugDrawer);
         this.dynamicsWorld.setGravity(new Vector3(0, -60f, 0)); // -22f is original
+        
+        
     }
     public void setDebugDrawer(DebugDrawer drawer) { this.dynamicsWorld.setDebugDrawer(drawer); } 
     

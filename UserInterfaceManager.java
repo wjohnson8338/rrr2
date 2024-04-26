@@ -16,6 +16,7 @@ public class UserInterfaceManager {
     private final Stage stage; 
     private ValueBar healthBar; // This will hold our health value for the player 
     private ValueBar staminaBar; // This will hold our stamina value for the player 
+    private GoalFrame goalFrame; // Holds player objective at top left of screen    
     
     public UserInterfaceManager() {
         /**
@@ -64,7 +65,11 @@ public class UserInterfaceManager {
         this.staminaBar = new ValueBar(name, screenPosition, scale, amount, minAmount, maxAmount, drawableBar);
         this.staminaBar.addToStage(this.stage);
     }
-  
+    
+    public void initGoalFrame(Vector2 screenPosition, float scale) {
+        this.goalFrame = new GoalFrame(screenPosition, scale);
+        this.goalFrame.addToStage(this.stage);
+    }
     public Vector2 getHealthBarPosition() {
         /**
          * Returns the health bar's position

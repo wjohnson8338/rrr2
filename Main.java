@@ -7,6 +7,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 // My Imports 
 import com.mygdx.game.levels.Level;
+import com.mygdx.game.levels.LevelOne;
+import com.mygdx.game.levels.LevelTwo;
 import com.mygdx.game.levels.TestLevel;
 // Scene2D Imports
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -69,18 +71,24 @@ public class Main extends ApplicationAdapter {
     // Audio Management
     private AudioManager audioManager;
     // Level Management
+    private Level activeLevel;
     private Level debugLevel;
+    private Level levelOne;
+    private Level levelTwo;
+    private int levelNumber;
     
 
     @Override
     public void create () {
+        levelNumber = 1;
         // Scene2d // TODO Eventually move this stuff to a class.
         uiManager = new UserInterfaceManager();
         uiManager.initHealthBar("health", new Vector2(Gdx.graphics.getWidth() * 0.98f, Gdx.graphics.getHeight() * 0.5f), 1.5f, 100f, 0f, 100f, new Image(new Texture(Gdx.files.internal("healthBar.png"))));
         uiManager.initStaminaBar("stamina", new Vector2(Gdx.graphics.getWidth() * 0.955f, Gdx.graphics.getHeight() * 0.5f), 1f, 100f, 0f, 100f, new Image(new Texture(Gdx.files.internal("staminaBar.png"))));
+        uiManager.initGoalFrame(new Vector2(Gdx.graphics.getWidth() * 0.007f, Gdx.graphics.getHeight() * 0.87f), 0.35f);
         // Scene Information
         mundus = new Mundus(Gdx.files.internal("RRRProject"));
-        scene = mundus.loadScene("areaOne.mundus");
+        scene = mundus.loadScene("levelOne.mundus");
         
         // Terrain Info
         terrainObject = scene.sceneGraph.findByName("terrainAreaOne");
@@ -113,13 +121,15 @@ public class Main extends ApplicationAdapter {
         // Now add our Physics Body
         terrainBody = physicsSystem.addTerrain(terrainObject, terrainComponent);
         physicsSystem.addBody(player.initPlayerEntity());
-        
         // CUTSCENE TESTING
         camera.playCutscene(cutscenesHolder.getCutsceneByName("testing"));
         camera.getCamera().far = 240f;
         
         // Level Testing
         debugLevel = new TestLevel();
+        levelOne = new LevelOne(this, player);
+        levelTwo = new LevelTwo(camera, player);
+        activeLevel = levelOne;
         
         
         
@@ -132,7 +142,7 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render () {
-        ScreenUtils.clear(1, 0, 0, 1);
+        ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         float dt = Gdx.graphics.getDeltaTime();
@@ -146,14 +156,24 @@ public class Main extends ApplicationAdapter {
         scene.render();
         physicsSystem.render(camera, player); // Rendering Debug Lines
         uiManager.render();
-        audioManager.play();
+        audioManager.stepAudio();
         
-        // Debugger
+        
+        // Level Checks/Updates
+        activeLevel.checks(scene);
+        activeLevel.update();
+        
         if (Gdx.input.isKeyPressed(Keys.X)) {
-            Object[] returnedItems = debugLevel.load(mundus, player, physicsSystem, camera);
-            // [scene, animationController]
-            scene = (Scene) returnedItems[0];
-            animController = (AnimationController) returnedItems[1];
+//            Object[] returnedItems = debugLevel.load(mundus, player, physicsSystem, camera);
+//            scene = (Scene) returnedItems[0];
+//            animController = (AnimationController) returnedItems[1];
+              switchLevel(2);
+        }
+        else if (Gdx.input.isKeyPressed(Keys.C)) {
+//            Object[] returnedItems = levelOne.load(mundus, player, physicsSystem, camera);
+//            scene = (Scene) returnedItems[0];
+//            animController = (AnimationController) returnedItems[1];
+              switchLevel(1);
         }
 
 
@@ -167,5 +187,24 @@ public class Main extends ApplicationAdapter {
         physicsSystem.dispose();
         stage.dispose();
         
+    }
+    
+    public void switchLevel(int levelNum) {
+        int levelToChange = levelNum;
+        switch (levelToChange) {
+            case 1:
+                basicLoad(levelOne);
+                break;
+            case 2:
+                basicLoad(levelTwo);
+                break;
+        }
+    }
+    
+    public void basicLoad(Level level) {
+        Object[] returnedItems = level.load(mundus, player, physicsSystem, camera, audioManager);
+        scene = (Scene) returnedItems[0];
+        animController = (AnimationController) returnedItems[1];
+        activeLevel = level;
     }
 }
